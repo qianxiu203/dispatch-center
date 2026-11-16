@@ -28,18 +28,38 @@ export interface CheckResult {
   fixDescription?: string;
 }
 
-function runCmd(cmd: string, args: string[], timeout = 15000, extraEnv?: Record<string, string>): Promise<{ code: number; out: string }> {
+/**
+ * 运行外部命令，永远 resolve、绝不 reject：任何失败（含 spawn 同步抛错）都以
+ * { code: 1, out: 错误信息 } 返回，保证体检/修复不会因单项命令起不来而整体抛错。
+ * Windows 上 npm/npx/codex 都是 .cmd 启动器，Node 20.12+（CVE-2024-27980 安全策略）
+ * 禁止不经 shell 直接启动 .bat/.cmd，因此 win32 统一走 shell，并把含空格的参数手工加引号
+ * （shell:true 时 Node 不做参数转义；与 src/worker/codex.ts 的 joinCommand 同一做法）。
+ */
+export function runCmd(cmd: string, args: string[], timeout = 15000, extraEnv?: Record<string, string>): Promise<{ code: number; out: string }> {
   return new Promise((resolve) => {
-    execFile(
-      cmd,
-      args,
-      { timeout, windowsHide: true, env: { ...process.env, ...extraEnv } },
-      (err, stdout, stderr) => {
-        const code = err && typeof (err as any).code === "number" ? (err as any).code : err ? 1 : 0;
-        resolve({ code, out: `${stdout}${stderr}`.trim() });
-      }
-    );
+    const isWin = process.platform === "win32";
+    const file = isWin ? joinShellCommand(cmd, args) : cmd;
+    const argv = isWin ? [] : args;
+    try {
+      execFile(
+        file,
+        argv,
+        { timeout, windowsHide: true, shell: isWin, env: { ...process.env, ...extraEnv } },
+        (err, stdout, stderr) => {
+          const code = err && typeof (err as any).code === "number" ? (err as any).code : err ? 1 : 0;
+          resolve({ code, out: `${stdout}${stderr}`.trim() });
+        }
+      );
+    } catch (err: any) {
+      resolve({ code: 1, out: err?.message ?? String(err) });
+    }
   });
+}
+
+/** Windows shell 模式下把 exe 与参数拼成一条命令行，含空格的部分加引号（同 src/worker/codex.ts joinCommand）。 */
+function joinShellCommand(exe: string, args: string[]): string {
+  const q = (a: string) => (/\s/.test(a) && !/^".*"$/.test(a) ? `"${a.replace(/"/g, '\\"')}"` : a);
+  return [exe, ...args].map(q).join(" ");
 }
 
 /** 服务启动时应调用：把 Playwright 浏览器目录固定到调度中心 tools 下（便携）。 */
@@ -242,7 +262,7 @@ export async function fixTool(id: string): Promise<{ ok: boolean; detail: string
       const prefix = path.join(toolsDir(), "npm");
       fs.mkdirSync(prefix, { recursive: true });
       const r = await runCmd("npm", ["install", "--prefix", prefix, "@openai/codex"], 600000);
-      if (r.code !== 0) return { ok: false, detail: `安装 codex 失败: ${r.out.slice(-300)}` };
+      if (r.code !== 0) return { ok: false, detail: `安装 codex 失败: ${r.out ? r.out.slice(-300) : "npm 命令执行失败且无输出（请确认 npm 已安装并在 PATH 中）"}` };
       info("envcheck", "codex 便携安装完成");
       return { ok: true, detail: `codex 已安装到 ${prefix}` };
     }
@@ -250,7 +270,7 @@ export async function fixTool(id: string): Promise<{ ok: boolean; detail: string
       const r = await runCmd("npx", ["playwright", "install", "chromium"], 1200000, {
         PLAYWRIGHT_BROWSERS_PATH: path.join(toolsDir(), "playwright-browsers"),
       });
-      if (r.code !== 0) return { ok: false, detail: `Chromium 下载失败: ${r.out.slice(-300)}` };
+      if (r.code !== 0) return { ok: false, detail: `Chromium 下载失败: ${r.out ? r.out.slice(-300) : "npx 命令执行失败且无输出（请确认 npx 已安装并在 PATH 中）"}` };
       info("envcheck", "Chromium 便携下载完成");
       return { ok: true, detail: "Chromium 已下载到调度中心 tools 目录" };
     }

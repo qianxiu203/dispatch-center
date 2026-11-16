@@ -4,7 +4,7 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import * as path from "node:path";
-import { runEnvCheck, fixTool } from "../envcheck/check";
+import { runEnvCheck, fixTool, runCmd } from "../envcheck/check";
 import { setConfigForTest } from "../config";
 import { appRoot, toolsDir } from "../util/paths";
 
@@ -43,6 +43,14 @@ describe("A4 环境体检与便携安装", () => {
     const r = await fixTool("不存在的工具");
     assert.equal(r.ok, false);
     assert.ok(/[\u4e00-\u9fa5]/.test(r.detail), `应有中文提示: ${r.detail}`);
+  });
+
+  test("runCmd 对不存在的命令返回非 0 且不抛错（体检不得整体失败）", async () => {
+    // 契约：runCmd 永远 resolve，绝不 reject；失败时 code 非 0、out 为字符串
+    // （Windows 缺失命令经 shell 返回 1/9009，Linux ENOENT 映射为 1，故只断言非 0）
+    const r = await runCmd("definitely-missing-cmd-xyz-123", ["--version"]);
+    assert.ok(r.code !== 0, `失败命令应返回非 0 code: ${r.code}`);
+    assert.equal(typeof r.out, "string");
   });
 
   test(
