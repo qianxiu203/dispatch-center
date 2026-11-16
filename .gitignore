@@ -1,0 +1,19 @@
+# 依赖与构建产物
+node_modules/
+dist/
+public/dist/
+
+# 便携安装的工具（Playwright Chromium、codex、MinGit 等，运行时按需下载）
+tools/
+
+# 本机配置（含 API Key，绝不提交）
+config.json
+
+# 运行时数据：日志、截图、卡片、端口记录、项目列表
+data/
+logs/
+*.log
+
+# 临时文件
+tmp/
+*.tmp

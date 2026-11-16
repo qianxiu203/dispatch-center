@@ -1,0 +1,32 @@
+{
+  "_说明": "复制本文件为 config.json 后按需修改。config.json 含 API Key，已被 .gitignore 排除，绝不提交、不写日志。",
+
+  "port": 3210,
+  "host": "127.0.0.1",
+
+  "brain": {
+    "baseUrl": "https://api.0407123.xyz/v1",
+    "apiKey": "在此填入你的 API Key",
+    "model": "glm-5.3-flash"
+  },
+
+  "worker": {
+    "kind": "codex",
+    "executablePath": "",
+    "baseUrl": "https://api.0407123.xyz/v1",
+    "model": "glm-5.3-flash",
+    "apiKey": "在此填入工人的 API Key（留空则使用工人自己的登录）"
+  },
+
+  "permissionMode": "yolo",
+
+  "limits": {
+    "maxFixAttempts": 3,
+    "maxStepsPerTask": 30,
+    "maxMinutesPerTask": 60
+  },
+
+  "acceptance": {
+    "commandTimeoutSeconds": 120
+  }
+}
