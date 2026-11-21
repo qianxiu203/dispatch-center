@@ -1,5 +1,5 @@
 {
-  "_说明": "复制本文件为 config.json 后按需修改。config.json 含 API Key，已被 .gitignore 排除，绝不提交、不写日志。",
+  "_说明": "复制本文件为 config.json 后按需修改。config.json 含 API Key，已被 .gitignore 排除，绝不提交、不写日志。未列出的字段使用程序内默认值。",
 
   "port": 3210,
   "host": "127.0.0.1",
@@ -7,7 +7,9 @@
   "brain": {
     "baseUrl": "https://api.0407123.xyz/v1",
     "apiKey": "在此填入你的 API Key",
-    "model": "glm-5.3-flash"
+    "model": "glm-5.3-flash",
+    "maxContextTokens": 32768,
+    "compressThreshold": 0.7
   },
 
   "worker": {
@@ -15,7 +17,10 @@
     "executablePath": "",
     "baseUrl": "https://api.0407123.xyz/v1",
     "model": "glm-5.3-flash",
-    "apiKey": "在此填入工人的 API Key（留空则使用工人自己的登录）"
+    "apiKey": "在此填入工人的 API Key（留空则使用工人自己的登录）",
+    "_dangerFullAccess_说明": "默认 false：工人用官方沙箱 workspace-write 运行（项目目录内可写，网络按 sandboxNetworkAccess 放行）。开启 true 后工人以 -s danger-full-access 运行（无沙箱无审批，调度中心不具备执行前拦截能力，需自行确认风险）。",
+    "dangerFullAccess": false,
+    "sandboxNetworkAccess": true
   },
 
   "permissionMode": "yolo",
@@ -23,10 +28,30 @@
   "limits": {
     "maxFixAttempts": 3,
     "maxStepsPerTask": 30,
-    "maxMinutesPerTask": 60
+    "maxMinutesPerTask": 60,
+    "maxFixPerSignature": 3,
+    "maxTotalFixes": 6,
+    "maxWorkerQuestions": 15,
+    "maxCriteriaRegen": 2,
+    "maxHarnessRegen": 1
+  },
+
+  "watchdog": {
+    "maxTotalMinutes": 90,
+    "maxWorkerCalls": 40,
+    "maxSilenceMinutes": 10,
+    "maxBrainCalls": 200
+  },
+
+  "heartbeat": {
+    "intervalMinutes": 5
   },
 
   "acceptance": {
     "commandTimeoutSeconds": 120
+  },
+
+  "env": {
+    "mirrorDownloadHost": "https://cdn.npmmirror.com/binaries/playwright"
   }
 }
