@@ -33,5 +33,5 @@ jobs:
       - name: 下载验收用 Chromium
         run: npx playwright install chromium
 
-      - name: 运行测试（A1-A10；A5 的真实 codex 任务需要登录环境，CI 自动跳过）
+      - name: 运行测试（v2 全量 37 项：假大脑+假工人，不消耗真实额度）
         run: npm test
